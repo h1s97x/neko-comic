@@ -1,0 +1,11 @@
+name: neko-comic-workspace
+description: A modern comic reader with modular architecture
+version: 1.0.0
+
+packages:
+  - packages/neko_core
+  - packages/neko_source_js
+  - packages/neko_image
+  - packages/neko_reader
+  - packages/neko_ui
+  - app

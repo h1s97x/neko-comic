@@ -1,0 +1,35 @@
+name: neko_source_js
+description: JavaScript-based comic source system for NekoComic
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+  flutter: '>=3.41.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # JS Engine
+  flutter_qjs:
+    git:
+      url: https://github.com/venera-app/flutter_qjs
+      ref: 8feae95df7fb00455df129ad7a0dfec1d0e8d8e4
+
+  # Core
+  neko_core:
+    path: ../neko_core
+
+  # Network
+  dio: ^5.9.2
+  html: ^0.15.6
+
+  # Utils
+  crypto: ^3.0.6
+  pointycastle: ^4.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

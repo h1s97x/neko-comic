@@ -1,0 +1,36 @@
+name: neko-comic
+repository: https://github.com/h1s97x/neko-comic
+
+command:
+  bootstrap:
+    usePubspecOverlay: false
+    resolution: workspace
+
+scripts:
+  analyze:
+    exec: flutter analyze
+    packageFilters:
+      - "-app"
+
+  test:
+    exec: flutter test
+    packageFilters:
+      - "-app"
+
+  format:
+    exec: flutter format .
+
+  build:app:
+    exec: flutter build apk --release
+    packageFilters:
+      - "app"
+
+  clean:
+    exec: flutter clean
+
+  pub:
+    exec: flutter pub get
+    packageFilters:
+      - all
+
+version: 1.0.0
