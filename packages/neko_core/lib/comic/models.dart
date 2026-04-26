@@ -1,98 +1,458 @@
-/// Comic data models
-class ComicModels {
-  ComicModels._();
-}
+/// Comic data models for NekoComic
+/// Reference: Venera comic_source/models.dart
 
-/// Comic information
-class Comic {
-  final String id;
-  final String title;
-  final String? coverUrl;
-  final String? author;
-  final String? description;
-  final List<String> tags;
-  final String sourceId;
-  final DateTime? lastUpdate;
-  final bool isFavorite;
+/// Comment model
+class NekoComment {
+  final String userName;
+  final String? avatar;
+  final String content;
+  final String? time;
+  final int? replyCount;
+  final String? id;
+  int? score;
+  final bool? isLiked;
+  int? voteStatus; // 1: upvote, -1: downvote, 0: none
 
-  const Comic({
-    required this.id,
-    required this.title,
-    this.coverUrl,
-    this.author,
-    this.description,
-    this.tags = const [],
-    required this.sourceId,
-    this.lastUpdate,
-    this.isFavorite = false,
+  NekoComment({
+    required this.userName,
+    this.avatar,
+    required this.content,
+    this.time,
+    this.replyCount,
+    this.id,
+    this.score,
+    this.isLiked,
+    this.voteStatus,
   });
 
-  Comic copyWith({
-    String? id,
-    String? title,
-    String? coverUrl,
-    String? author,
-    String? description,
-    List<String>? tags,
-    String? sourceId,
-    DateTime? lastUpdate,
-    bool? isFavorite,
-  }) {
-    return Comic(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      coverUrl: coverUrl ?? this.coverUrl,
-      author: author ?? this.author,
-      description: description ?? this.description,
-      tags: tags ?? this.tags,
-      sourceId: sourceId ?? this.sourceId,
-      lastUpdate: lastUpdate ?? this.lastUpdate,
-      isFavorite: isFavorite ?? this.isFavorite,
+  static String? parseTime(dynamic value) {
+    if (value == null) return null;
+    if (value is int) {
+      if (value < 10000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(value * 1000)
+            .toString()
+            .substring(0, 19);
+      } else {
+        return DateTime.fromMillisecondsSinceEpoch(value)
+            .toString()
+            .substring(0, 19);
+      }
+    }
+    return value.toString();
+  }
+
+  factory NekoComment.fromJson(Map<String, dynamic> json) {
+    return NekoComment(
+      userName: json["userName"],
+      avatar: json["avatar"],
+      content: json["content"],
+      time: parseTime(json["time"]),
+      replyCount: json["replyCount"],
+      id: json["id"]?.toString(),
+      score: json["score"],
+      isLiked: json["isLiked"],
+      voteStatus: json["voteStatus"],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'title': title,
-      'coverUrl': coverUrl,
-      'author': author,
-      'description': description,
-      'tags': tags,
-      'sourceId': sourceId,
-      'lastUpdate': lastUpdate?.toIso8601String(),
-      'isFavorite': isFavorite,
+      "userName": userName,
+      "avatar": avatar,
+      "content": content,
+      "time": time,
+      "replyCount": replyCount,
+      "id": id,
+      "score": score,
+      "isLiked": isLiked,
+      "voteStatus": voteStatus,
+    };
+  }
+}
+
+/// Comic model (basic info)
+class NekoComic {
+  final String title;
+  final String cover;
+  final String id;
+  final String? subtitle;
+  final List<String>? tags;
+  final String description;
+  final String sourceKey;
+  final int? maxPage;
+  final String? language;
+  final String? favoriteId;
+  final double? stars;
+
+  const NekoComic({
+    required this.title,
+    required this.cover,
+    required this.id,
+    this.subtitle,
+    this.tags,
+    this.description = "",
+    required this.sourceKey,
+    this.maxPage,
+    this.language,
+    this.favoriteId,
+    this.stars,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      "title": title,
+      "cover": cover,
+      "id": id,
+      "subtitle": subtitle,
+      "tags": tags,
+      "description": description,
+      "sourceKey": sourceKey,
+      "maxPage": maxPage,
+      "language": language,
+      "favoriteId": favoriteId,
+      "stars": stars,
     };
   }
 
-  factory Comic.fromJson(Map<String, dynamic> json) {
-    return Comic(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      coverUrl: json['coverUrl'] as String?,
-      author: json['author'] as String?,
-      description: json['description'] as String?,
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
-      sourceId: json['sourceId'] as String,
-      lastUpdate: json['lastUpdate'] != null
-          ? DateTime.parse(json['lastUpdate'] as String)
-          : null,
-      isFavorite: json['isFavorite'] as bool? ?? false,
+  factory NekoComic.fromJson(Map<String, dynamic> json, String sourceKey) {
+    return NekoComic(
+      title: json["title"],
+      cover: json["cover"],
+      id: json["id"],
+      subtitle: json["subtitle"] ?? json["subTitle"] ?? "",
+      tags: List<String>.from(json["tags"] ?? []),
+      description: json["description"] ?? "",
+      sourceKey: sourceKey,
+      maxPage: json["maxPage"],
+      language: json["language"],
+      favoriteId: json["favoriteId"],
+      stars: (json["stars"] as num?)?.toDouble(),
     );
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Comic && other.id == id && other.sourceId == sourceId;
+    if (other is! NekoComic) return false;
+    return other.id == id && other.sourceKey == sourceKey;
   }
 
   @override
-  int get hashCode => Object.hash(id, sourceId);
+  int get hashCode => id.hashCode ^ sourceKey.hashCode;
+
+  @override
+  String toString() => "$sourceKey@$id";
 }
 
-/// Chapter information
-class Chapter {
+/// Comic ID with type
+class NekoComicID {
+  final NekoComicType type;
+  final String id;
+
+  const NekoComicID(this.type, this.id);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! NekoComicID) return false;
+    return other.type == type && other.id == id;
+  }
+
+  @override
+  int get hashCode => type.hashCode ^ id.hashCode;
+
+  @override
+  String toString() => "$type@$id";
+}
+
+/// Comic type enum
+enum NekoComicType {
+  local,
+  network,
+  favorite,
+  history,
+  downloaded;
+
+  int get hashCode => index;
+}
+
+/// Comic chapters
+class NekoComicChapters {
+  final Map<String, String>? _chapters;
+  final Map<String, Map<String, String>>? _groupedChapters;
+
+  /// Create with flat map
+  const NekoComicChapters(Map<String, String> this._chapters)
+      : _groupedChapters = null;
+
+  /// Create with grouped map
+  const NekoComicChapters.grouped(Map<String, Map<String, String>> this._groupedChapters)
+      : _chapters = null;
+
+  factory NekoComicChapters.fromJson(dynamic json) {
+    if (json is! Map) throw ArgumentError("Invalid json type");
+
+    // Check if it's grouped format
+    if (json.values.isNotEmpty) {
+      final firstValue = json.values.first;
+      if (firstValue is Map) {
+        // Grouped format
+        var grouped = <String, Map<String, String>>{};
+        json.forEach((key, value) {
+          if (value is Map) {
+            grouped[key] = Map<String, String>.from(value);
+          }
+        });
+        return NekoComicChapters.grouped(grouped);
+      }
+    }
+
+    // Flat format
+    return NekoComicChapters(Map<String, String>.from(json));
+  }
+
+  /// Get flat list of chapters
+  List<MapEntry<String, String>> get entries {
+    if (_chapters != null) {
+      return _chapters!.entries.toList();
+    }
+    var result = <MapEntry<String, String>>[];
+    _groupedChapters?.forEach((_, chapters) {
+      result.addAll(chapters.entries);
+    });
+    return result;
+  }
+
+  /// Get flat map
+  Map<String, String> toFlatMap() {
+    if (_chapters != null) return Map.from(_chapters!);
+    var result = <String, String>{};
+    _groupedChapters?.forEach((_, chapters) {
+      result.addAll(chapters);
+    });
+    return result;
+  }
+
+  /// Get grouped map
+  Map<String, Map<String, String>>? get grouped =>
+      _groupedChapters;
+
+  /// Get chapter title by id
+  String? getChapterTitle(String id) {
+    return toFlatMap()[id];
+  }
+
+  /// Get all chapter ids
+  List<String> get ids => toFlatMap().keys.toList();
+
+  /// Get all chapter titles
+  List<String> get titles => toFlatMap().values.toList();
+
+  /// Get total count
+  int get length => toFlatMap().length;
+
+  bool get isEmpty => length == 0;
+  bool get isNotEmpty => !isEmpty;
+
+  Map<String, dynamic> toJson() {
+    if (_chapters != null) return Map.from(_chapters!);
+    return {"grouped": _groupedChapters};
+  }
+}
+
+/// Comic details (full info)
+class NekoComicDetails {
+  final String title;
+  final String? subTitle;
+  final String cover;
+  final String? description;
+  final Map<String, List<String>> tags;
+  final NekoComicChapters? chapters;
+  final List<String>? thumbnails;
+  final List<NekoComic>? recommend;
+  final String sourceKey;
+  final String comicId;
+  final bool? isFavorite;
+  final String? subId;
+  final bool? isLiked;
+  final int? likesCount;
+  final int? commentCount;
+  final String? uploader;
+  final String? uploadTime;
+  final String? updateTime;
+  final String? url;
+  final double? stars;
+  final int? maxPage;
+  final List<NekoComment>? comments;
+
+  const NekoComicDetails({
+    required this.title,
+    this.subTitle,
+    required this.cover,
+    this.description,
+    this.tags = const {},
+    this.chapters,
+    this.thumbnails,
+    this.recommend,
+    required this.sourceKey,
+    required this.comicId,
+    this.isFavorite,
+    this.subId,
+    this.isLiked,
+    this.likesCount,
+    this.commentCount,
+    this.uploader,
+    this.uploadTime,
+    this.updateTime,
+    this.url,
+    this.stars,
+    this.maxPage,
+    this.comments,
+  });
+
+  static Map<String, List<String>> _generateMap(Map<dynamic, dynamic> map) {
+    var res = <String, List<String>>{};
+    map.forEach((key, value) {
+      if (value is List) {
+        res[key] = List<String>.from(value);
+      }
+    });
+    return res;
+  }
+
+  factory NekoComicDetails.fromJson(Map<String, dynamic> json) {
+    return NekoComicDetails(
+      title: json["title"],
+      subTitle: json["subtitle"],
+      cover: json["cover"],
+      description: json["description"],
+      tags: _generateMap(json["tags"] ?? {}),
+      chapters: json["chapters"] != null
+          ? NekoComicChapters.fromJson(json["chapters"])
+          : null,
+      thumbnails: json["thumbnails"] != null
+          ? List<String>.from(json["thumbnails"])
+          : null,
+      recommend: (json["recommend"] as List?)
+          ?.map((e) => NekoComic.fromJson(e, json["sourceKey"]))
+          .toList(),
+      sourceKey: json["sourceKey"],
+      comicId: json["comicId"],
+      isFavorite: json["isFavorite"],
+      subId: json["subId"],
+      likesCount: json["likesCount"],
+      isLiked: json["isLiked"],
+      commentCount: json["commentCount"],
+      uploader: json["uploader"],
+      uploadTime: json["uploadTime"],
+      updateTime: json["updateTime"],
+      url: json["url"],
+      stars: (json["stars"] as num?)?.toDouble(),
+      maxPage: json["maxPage"],
+      comments: (json["comments"] as List?)
+          ?.map((e) => NekoComment.fromJson(e))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      "title": title,
+      "subTitle": subTitle,
+      "cover": cover,
+      "description": description,
+      "tags": tags,
+      "chapters": chapters?.toJson(),
+      "thumbnails": thumbnails,
+      "recommend": null,
+      "sourceKey": sourceKey,
+      "comicId": comicId,
+      "isFavorite": isFavorite,
+      "subId": subId,
+      "isLiked": isLiked,
+      "likesCount": likesCount,
+      "commentCount": commentCount,
+      "uploader": uploader,
+      "uploadTime": uploadTime,
+      "updateTime": updateTime,
+      "url": url,
+      "stars": stars,
+      "maxPage": maxPage,
+    };
+  }
+
+  /// Convert tags map to plain list
+  List<String> get plainTags {
+    var res = <String>[];
+    tags.forEach((key, value) {
+      res.addAll(value.map((e) => "$key:$e"));
+    });
+    return res;
+  }
+
+  /// Find author tag
+  String? findAuthor() {
+    var authorNamespaces = [
+      "author", "authors", "artist", "artists",
+      "作者", "画师"
+    ];
+    for (var entry in tags.entries) {
+      if (authorNamespaces.contains(entry.key.toLowerCase()) &&
+          entry.value.isNotEmpty) {
+        return entry.value.first;
+      }
+    }
+    return null;
+  }
+
+  /// Find update time
+  String? findUpdateTime() {
+    if (updateTime != null) {
+      return _validateUpdateTime(updateTime!);
+    }
+    const acceptedNamespaces = [
+      "更新", "最後更新", "最后更新", "update", "last update",
+    ];
+    for (var entry in tags.entries) {
+      if (acceptedNamespaces.contains(entry.key.toLowerCase()) &&
+          entry.value.isNotEmpty) {
+        return _validateUpdateTime(entry.value.first);
+      }
+    }
+    return null;
+  }
+
+  String? _validateUpdateTime(String time) {
+    time = time.split(" ").first;
+    var segments = time.split("-");
+    if (segments.length != 3) return null;
+    var year = int.tryParse(segments[0]);
+    var month = int.tryParse(segments[1]);
+    var day = int.tryParse(segments[2]);
+    if (year == null || month == null || day == null) return null;
+    if (year < 2000 || year > 3000) return null;
+    if (month < 1 || month > 12) return null;
+    if (day < 1 || day > 31) return null;
+    return "$year-$month-$day";
+  }
+
+  /// Convert to basic Comic model
+  NekoComic toComic() {
+    return NekoComic(
+      title: title,
+      cover: cover,
+      id: comicId,
+      subtitle: subTitle,
+      tags: plainTags,
+      description: description ?? "",
+      sourceKey: sourceKey,
+      maxPage: maxPage,
+      isFavorite: isFavorite,
+      stars: stars,
+    );
+  }
+}
+
+/// Chapter model
+class NekoChapter {
   final String id;
   final String title;
   final int index;
@@ -100,7 +460,7 @@ class Chapter {
   final DateTime? uploadDate;
   final String? sourceId;
 
-  const Chapter({
+  const NekoChapter({
     required this.id,
     required this.title,
     required this.index,
@@ -109,66 +469,39 @@ class Chapter {
     this.sourceId,
   });
 
-  Chapter copyWith({
-    String? id,
-    String? title,
-    int? index,
-    String? comicId,
-    DateTime? uploadDate,
-    String? sourceId,
-  }) {
-    return Chapter(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      index: index ?? this.index,
-      comicId: comicId ?? this.comicId,
-      uploadDate: uploadDate ?? this.uploadDate,
-      sourceId: sourceId ?? this.sourceId,
-    );
-  }
-
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'title': title,
-      'index': index,
-      'comicId': comicId,
-      'uploadDate': uploadDate?.toIso8601String(),
-      'sourceId': sourceId,
+      "id": id,
+      "title": title,
+      "index": index,
+      "comicId": comicId,
+      "uploadDate": uploadDate?.toIso8601String(),
+      "sourceId": sourceId,
     };
   }
 
-  factory Chapter.fromJson(Map<String, dynamic> json) {
-    return Chapter(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      index: json['index'] as int,
-      comicId: json['comicId'] as String,
-      uploadDate: json['uploadDate'] != null
-          ? DateTime.parse(json['uploadDate'] as String)
+  factory NekoChapter.fromJson(Map<String, dynamic> json) {
+    return NekoChapter(
+      id: json["id"],
+      title: json["title"],
+      index: json["index"],
+      comicId: json["comicId"],
+      uploadDate: json["uploadDate"] != null
+          ? DateTime.parse(json["uploadDate"])
           : null,
-      sourceId: json['sourceId'] as String?,
+      sourceId: json["sourceId"],
     );
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Chapter && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
 }
 
-/// Image information
-class ImageInfo {
+/// Image info model
+class NekoImageInfo {
   final String url;
   final int index;
   final int? width;
   final int? height;
 
-  const ImageInfo({
+  const NekoImageInfo({
     required this.url,
     required this.index,
     this.width,
@@ -177,68 +510,40 @@ class ImageInfo {
 
   Map<String, dynamic> toJson() {
     return {
-      'url': url,
-      'index': index,
-      'width': width,
-      'height': height,
+      "url": url,
+      "index": index,
+      "width": width,
+      "height": height,
     };
   }
 
-  factory ImageInfo.fromJson(Map<String, dynamic> json) {
-    return ImageInfo(
-      url: json['url'] as String,
-      index: json['index'] as int,
-      width: json['width'] as int?,
-      height: json['height'] as int?,
+  factory NekoImageInfo.fromJson(Map<String, dynamic> json) {
+    return NekoImageInfo(
+      url: json["url"],
+      index: json["index"],
+      width: json["width"],
+      height: json["height"],
     );
   }
 }
 
-/// Comment information
-class Comment {
+/// Archive info model
+class NekoArchiveInfo {
+  final String title;
+  final String description;
   final String id;
-  final String userId;
-  final String userName;
-  final String content;
-  final DateTime time;
-  final int upCount;
-  final int downCount;
-  final String? avatarUrl;
 
-  const Comment({
+  const NekoArchiveInfo({
+    required this.title,
+    required this.description,
     required this.id,
-    required this.userId,
-    required this.userName,
-    required this.content,
-    required this.time,
-    this.upCount = 0,
-    this.downCount = 0,
-    this.avatarUrl,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'userId': userId,
-      'userName': userName,
-      'content': content,
-      'time': time.toIso8601String(),
-      'upCount': upCount,
-      'downCount': downCount,
-      'avatarUrl': avatarUrl,
-    };
-  }
-
-  factory Comment.fromJson(Map<String, dynamic> json) {
-    return Comment(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      userName: json['userName'] as String,
-      content: json['content'] as String,
-      time: DateTime.parse(json['time'] as String),
-      upCount: json['upCount'] as int? ?? 0,
-      downCount: json['downCount'] as int? ?? 0,
-      avatarUrl: json['avatarUrl'] as String?,
+  factory NekoArchiveInfo.fromJson(Map<String, dynamic> json) {
+    return NekoArchiveInfo(
+      title: json["title"],
+      description: json["description"],
+      id: json["id"],
     );
   }
 }

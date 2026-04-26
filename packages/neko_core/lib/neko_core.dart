@@ -3,8 +3,6 @@ library neko_core;
 
 // Comic models
 export 'comic/models.dart';
-export 'comic/comic.dart';
-export 'comic/chapter.dart';
 
 // Storage
 export 'storage/database.dart';
@@ -18,3 +16,6 @@ export 'network/cookie_jar.dart';
 
 // Sync
 export 'sync/sync_manager.dart';
+
+// Utils
+export 'utils/utils.dart';
