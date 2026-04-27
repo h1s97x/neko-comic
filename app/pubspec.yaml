@@ -35,6 +35,16 @@ dependencies:
   yaml: ^3.1.3
   intl: any
 
+  # UI
+  flex_seed_scheme: ^4.0.1
+  dynamic_color: ^1.8.1
+
+  # Navigation
+  go_router: ^15.0.0
+
+  # State Management
+  provider: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,3 +55,8 @@ flutter:
 
   assets:
     - assets/
+
+  fonts:
+    - family: NekoIcons
+      fonts:
+        - asset: assets/fonts/NekoIcons.ttf
