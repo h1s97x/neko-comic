@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:neko_core/neko_core.dart';
 import 'package:neko_ui/neko_ui.dart';
 
@@ -12,7 +11,7 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  List<NekoComic> _favorites = [];
+  List<NekoFavoriteItem> _favorites = [];
   bool _isLoading = true;
 
   @override
@@ -21,18 +20,11 @@ class _FavoritesPageState extends State<FavoritesPage> {
     _loadFavorites();
   }
 
-  Future<void> _loadFavorites() async {
-    try {
-      final favorites = await NekoFavoritesManager().getAll();
-      setState(() {
-        _favorites = favorites;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  void _loadFavorites() {
+    setState(() {
+      _favorites = NekoFavoritesManager.instance.getAll();
+      _isLoading = false;
+    });
   }
 
   @override
@@ -53,39 +45,29 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
 
     if (_favorites.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.favorite_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No favorites yet',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap the heart icon on a comic to add it here',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-          ],
-        ),
+      return const NekoEmptyWidget(
+        icon: Icons.favorite_border,
+        message: 'No favorites yet',
       );
     }
 
-    return NekoComicGrid(
-      comics: _favorites,
-      onComicTap: (comic) {
-        context.push('/comic/${comic.sourceId}/${comic.id}');
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadFavorites();
       },
+      child: ListView.builder(
+        itemCount: _favorites.length,
+        itemBuilder: (context, index) {
+          final fav = _favorites[index];
+          final comic = fav.toComic();
+          return NekoComicTile(
+            comic: comic,
+            onTap: () {
+              // Navigate to comic details
+            },
+          );
+        },
+      ),
     );
   }
 }

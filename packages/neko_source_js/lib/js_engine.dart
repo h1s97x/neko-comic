@@ -63,6 +63,15 @@ class NekoJsEngine with NekoJsEngineApi, NekoHtmlApi, NekoConvertApi {
     NekoJsEngine().ensureInit();
   }
 
+  /// Ensure the engine is initialized
+  Future<void> ensureInit() async {
+    if (!_closed) return;
+    await doInit();
+  }
+
+  /// Initialize the JS engine (static method for easy access)
+  static Future<void> init() => NekoJsEngine().ensureInit();
+
   void resetDio() {
     _dio = Dio(BaseOptions(
       responseType: ResponseType.plain,

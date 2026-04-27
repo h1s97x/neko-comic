@@ -1,55 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:neko_core/neko_core.dart';
+import 'package:neko_reader/neko_reader.dart';
 import 'package:neko_source_js/neko_source_js.dart';
 
-/// Global application state store
+/// Application state management
 class AppStore extends ChangeNotifier {
-  // Comic sources
-  final List<NekoComicSource> _sources = [];
-  List<NekoComicSource> get sources => _sources;
-  
-  // Source manager
-  late final NekoComicSourceManager sourceManager;
-  
-  // Settings
+  // Theme
   ThemeMode _themeMode = ThemeMode.system;
   ThemeMode get themeMode => _themeMode;
-  
+
   void setThemeMode(ThemeMode mode) {
     _themeMode = mode;
     notifyListeners();
   }
-  
-  // Reading mode
-  ReaderLayout _defaultLayout = ReaderLayout.rightToLeft;
-  ReaderLayout get defaultLayout => _defaultLayout;
-  
-  void setDefaultLayout(ReaderLayout layout) {
-    _defaultLayout = layout;
+
+  // Reader settings
+  ReaderLayout _readerLayout = ReaderLayout.rightToLeft;
+  ReaderLayout get readerLayout => _readerLayout;
+  ReaderLayout get defaultLayout => _readerLayout;
+
+  void setReaderLayout(ReaderLayout layout) {
+    _readerLayout = layout;
     notifyListeners();
   }
-  
-  // Loading state
+
+  // Initialization state
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
-  
+
   String? _initError;
   String? get initError => _initError;
-  
-  /// Initialize the application
+
+  // Sources
+  List<NekoComicSource> _sources = [];
+  List<NekoComicSource> get sources => _sources;
+
+  Future<void> refreshSources() async {
+    _sources = NekoComicSourceManager().all();
+    notifyListeners();
+  }
+
+  // Initialize
   Future<void> init() async {
     try {
       // Initialize database
-      await NekoDatabase.instance.init();
-      
-      // Initialize source manager
-      sourceManager = NekoComicSourceManager();
-      await sourceManager.init();
-      _sources.addAll(sourceManager.sources);
-      
-      // Initialize cache manager
-      await NekoCacheManager.instance.init();
-      
+      await NekoDatabase.init();
+      // Initialize favorites manager
+      await NekoFavoritesManager.init();
+      // Initialize history manager
+      await NekoHistoryManager.init();
+      // Initialize JS engine
+      await NekoJsEngine.init();
+      // Initialize comic sources
+      await NekoComicSourceManager.init();
+      _sources = NekoComicSourceManager().all();
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
@@ -57,18 +61,13 @@ class AppStore extends ChangeNotifier {
       notifyListeners();
     }
   }
-  
-  /// Refresh comic sources
-  Future<void> refreshSources() async {
-    await sourceManager.reload();
-    _sources.clear();
-    _sources.addAll(sourceManager.sources);
+
+  // Settings
+  Map<String, dynamic> _settings = {};
+  Map<String, dynamic> get settings => _settings;
+
+  void updateSetting(String key, dynamic value) {
+    _settings[key] = value;
     notifyListeners();
-  }
-  
-  @override
-  void dispose() {
-    NekoDatabase.instance.close();
-    super.dispose();
   }
 }

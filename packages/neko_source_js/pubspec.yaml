@@ -4,8 +4,8 @@ version: 1.0.0
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
-  flutter: '>=3.41.0'
+  sdk: ^3.5.0
+  flutter: ^3.24.0
 
 dependencies:
   flutter:
@@ -22,12 +22,12 @@ dependencies:
     path: ../neko_core
 
   # Network
-  dio: ^5.9.2
-  html: ^0.15.6
+  dio: any
+  html: any
 
   # Utils
-  crypto: ^3.0.6
-  pointycastle: ^4.0.0
+  crypto: any
+  pointycastle: any
 
 dev_dependencies:
   flutter_test:

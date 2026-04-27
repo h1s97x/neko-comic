@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:neko_core/neko_core.dart';
-import 'package:neko_source_js/neko_source_js.dart';
-import 'package:neko_ui/neko_ui.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'router.dart';
 

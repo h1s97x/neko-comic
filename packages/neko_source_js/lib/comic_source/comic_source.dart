@@ -11,6 +11,7 @@ import 'comic_source/category.dart';
 import 'comic_source/parser.dart';
 import 'js_engine.dart';
 
+part 'models.dart';
 part 'favorites.dart';
 
 /// Manager for all comic sources.
@@ -25,6 +26,9 @@ class NekoComicSourceManager with ChangeNotifier {
   NekoComicSourceManager._create();
 
   factory NekoComicSourceManager() => _instance ??= NekoComicSourceManager._create();
+
+  /// Initialize the manager (static method for easy access)
+  static Future<void> init() => NekoComicSourceManager().init();
 
   /// Get all registered comic sources.
   List<NekoComicSource> all() => List.from(_sources);

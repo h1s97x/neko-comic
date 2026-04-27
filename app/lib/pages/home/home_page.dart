@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:neko_core/neko_core.dart';
+import 'package:neko_source_js/neko_source_js.dart';
 import 'package:neko_ui/neko_ui.dart';
 import 'package:provider/provider.dart';
 
-import '../stores/app_store.dart';
+import '../../stores/app_store.dart';
 
 /// Home page with comic sources and recent updates
 class HomePage extends StatefulWidget {

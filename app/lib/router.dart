@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:neko_source_js/neko_source_js.dart';
 
 import '../pages/home/home_page.dart';
 import '../pages/search/search_page.dart';
@@ -7,7 +8,7 @@ import '../pages/favorites/favorites_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/details/comic_details_page.dart';
 import '../pages/reader/reader_page.dart';
-import 'shell_scaffold.dart';
+import 'router/shell_scaffold.dart';
 
 /// Application router configuration
 class NekoRouter {
@@ -59,11 +60,13 @@ class NekoRouter {
         name: 'comic-details',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final sourceId = state.pathParameters['sourceId']!;
+          final sourceKey = state.pathParameters['sourceKey']!;
           final comicId = state.pathParameters['id']!;
+          final source = NekoComicSourceManager().find(sourceKey);
           return ComicDetailsPage(
-            sourceId: sourceId,
+            sourceKey: sourceKey,
             comicId: comicId,
+            source: source!,
           );
         },
       ),
@@ -76,8 +79,7 @@ class NekoRouter {
           return ReaderPage(
             comicId: extra['comicId'] as String,
             chapterId: extra['chapterId'] as String,
-            images: extra['images'] as List<String>,
-            currentIndex: extra['currentIndex'] as int,
+            source: extra['source'] as NekoComicSource,
           );
         },
       ),

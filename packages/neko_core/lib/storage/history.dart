@@ -131,7 +131,16 @@ class NekoHistoryManager with ChangeNotifier {
 
   NekoHistoryManager._();
 
+  /// Initialize history manager (static method for easy access)
+  static Future<void> init() => instance.initialize();
+
   bool _isInitialized = false;
+
+  /// Initialize
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+  }
 
   /// Get all history
   List<NekoHistory> getAll() {

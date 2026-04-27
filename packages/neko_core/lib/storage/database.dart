@@ -14,6 +14,9 @@ class NekoDatabase {
 
   NekoDatabase._();
 
+  /// Initialize database (static method for easy access)
+  static Future<void> init() => instance.initialize();
+
   late Database _db;
   bool _isInitialized = false;
 

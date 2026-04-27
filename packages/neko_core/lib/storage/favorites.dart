@@ -91,7 +91,16 @@ class NekoFavoritesManager with ChangeNotifier {
 
   NekoFavoritesManager._();
 
+  /// Initialize favorites manager (static method for easy access)
+  static Future<void> init() => instance.initialize();
+
   bool _isInitialized = false;
+
+  /// Initialize
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+  }
 
   /// Get all favorites
   List<NekoFavoriteItem> getAll() {

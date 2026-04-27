@@ -1,6 +1,9 @@
-name: neko-comic-workspace
+name: neko_comic_workspace
 description: A modern comic reader with modular architecture
 version: 1.0.0
+
+environment:
+  sdk: ^3.5.0
 
 packages:
   - packages/neko_core

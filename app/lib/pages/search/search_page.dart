@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:neko_core/neko_core.dart';
-import 'package:neko_ui/neko_ui.dart';
-import 'package:provider/provider.dart';
-
-import '../../stores/app_store.dart';
+import 'package:neko_source_js/neko_source_js.dart';
 
 /// Search page for finding comics
 class SearchPage extends StatefulWidget {
@@ -16,61 +11,50 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final _searchController = TextEditingController();
-  final _searchFocus = FocusNode();
-  
-  String? _selectedSourceId;
   List<NekoComic> _results = [];
   bool _isLoading = false;
   String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchFocus.requestFocus();
-  }
+  NekoComicSource? _selectedSource;
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _search() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
+  Future<void> _search(String keyword) async {
+    if (keyword.isEmpty) return;
 
-    final appStore = context.read<AppStore>();
-    
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      List<NekoComic> results = [];
-      
-      if (_selectedSourceId != null) {
-        final source = appStore.sources.firstWhere(
-          (s) => s.id == _selectedSourceId,
-        );
-        results = await source.search(query);
-      } else {
-        // Search all sources
-        for (final source in appStore.sources) {
-          try {
-            final sourceResults = await source.search(query);
-            results.addAll(sourceResults);
-          } catch (e) {
-            // Skip sources that fail
-          }
-        }
+      final sources = NekoComicSourceManager().all();
+      if (sources.isEmpty) {
+        setState(() {
+          _error = 'No comic sources available';
+          _isLoading = false;
+        });
+        return;
       }
 
-      setState(() {
-        _results = results;
-        _isLoading = false;
-      });
+      // Use first source or selected source
+      final source = _selectedSource ?? sources.first;
+      final result = await source.search(keyword);
+
+      if (result.isSuccess && result.data != null) {
+        setState(() {
+          _results = result.data!;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = result.error ?? 'Search failed';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -81,85 +65,56 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appStore = context.watch<AppStore>();
-
     return Scaffold(
-      appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
-          focusNode: _searchFocus,
-          decoration: InputDecoration(
-            hintText: 'Search comics...',
-            border: InputBorder.none,
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        _results = [];
-                      });
-                    },
-                  )
-                : null,
-          ),
-          onSubmitted: (_) => _search(),
-          onChanged: (_) => setState(() {}),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildSearchBar(),
+            if (_selectedSource != null) _buildSourceChip(),
+            Expanded(child: _buildContent()),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: _search,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          // Source filter
-          if (appStore.sources.isNotEmpty)
-            SizedBox(
-              height: 50,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                children: [
-                  FilterChip(
-                    label: const Text('All'),
-                    selected: _selectedSourceId == null,
-                    onSelected: (_) {
-                      setState(() {
-                        _selectedSourceId = null;
-                      });
-                      if (_searchController.text.isNotEmpty) {
-                        _search();
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ...appStore.sources.map((source) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(source.name),
-                      selected: _selectedSourceId == source.id,
-                      onSelected: (_) {
-                        setState(() {
-                          _selectedSourceId = source.id;
-                        });
-                        if (_searchController.text.isNotEmpty) {
-                          _search();
-                        }
-                      },
-                    ),
-                  )),
-                ],
-              ),
-            ),
-          const Divider(height: 1),
-          // Results
-          Expanded(
-            child: _buildContent(),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search comics...',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchController.clear();
+              setState(() {
+                _results = [];
+              });
+            },
           ),
-        ],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onSubmitted: _search,
+      ),
+    );
+  }
+
+  Widget _buildSourceChip() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Chip(
+        avatar: const Icon(Icons.source, size: 18),
+        label: Text(_selectedSource!.name),
+        onDeleted: () {
+          setState(() {
+            _selectedSource = null;
+          });
+        },
       ),
     );
   }
@@ -172,28 +127,21 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     if (_error != null) {
-      return NekoErrorWidget(
-        message: _error!,
-        onRetry: _search,
-      );
-    }
-
-    if (_results.isEmpty && _searchController.text.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.search,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(height: 16),
-            Text(
-              'Search for comics',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+            Text(_error!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _search(_searchController.text),
+              child: const Text('Retry'),
             ),
           ],
         ),
@@ -206,27 +154,89 @@ class _SearchPageState extends State<SearchPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.search_off,
+              Icons.search,
               size: 64,
               color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: 16),
             Text(
-              'No results found',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
+              'Search for comics',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
             ),
           ],
         ),
       );
     }
 
-    return NekoComicGrid(
-      comics: _results,
-      onComicTap: (comic) {
-        context.push('/comic/${comic.sourceId}/${comic.id}');
+    // Simple grid for search results
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 0.65,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: _results.length,
+      itemBuilder: (context, index) {
+        final comic = _results[index];
+        return _ComicGridItem(
+          comic: comic,
+          onTap: () {
+            // TODO: Navigate to comic details
+          },
+        );
       },
+    );
+  }
+}
+
+class _ComicGridItem extends StatelessWidget {
+  final NekoComic comic;
+  final VoidCallback onTap;
+
+  const _ComicGridItem({
+    required this.comic,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: comic.cover != null
+                  ? Image.network(
+                      comic.cover!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        child: const Icon(Icons.broken_image),
+                      ),
+                    )
+                  : Container(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: const Icon(Icons.book),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            comic.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
     );
   }
 }

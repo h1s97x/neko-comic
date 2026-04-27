@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:neko_core/neko_core.dart';
 import 'package:neko_source_js/neko_source_js.dart';
-import 'package:neko_ui/neko_ui.dart';
-import 'package:provider/provider.dart';
-
-import '../../stores/app_store.dart';
 
 /// Comic details page
 class ComicDetailsPage extends StatefulWidget {
-  final String sourceId;
   final String comicId;
+  final String sourceKey;
+  final NekoComicSource source;
 
   const ComicDetailsPage({
     super.key,
-    required this.sourceId,
     required this.comicId,
+    required this.sourceKey,
+    required this.source,
   });
 
   @override
@@ -32,52 +28,32 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
   void initState() {
     super.initState();
     _loadComic();
-    _checkFavorite();
   }
 
   Future<void> _loadComic() async {
-    final appStore = context.read<AppStore>();
-    
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
-      final source = appStore.sources.firstWhere(
-        (s) => s.id == widget.sourceId,
-      );
-      
-      final comic = await source.getComicDetails(widget.comicId);
-      
-      setState(() {
-        _comic = comic;
-        _isLoading = false;
-      });
+      final result = await widget.source.getComic(widget.comicId);
+      if (result.isSuccess) {
+        setState(() {
+          _comic = result.data;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _error = result.error ?? 'Failed to load comic';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _checkFavorite() async {
-    final isFav = await NekoFavoritesManager().isFavorite(widget.comicId);
-    setState(() {
-      _isFavorite = isFav;
-    });
-  }
-
-  Future<void> _toggleFavorite() async {
-    if (_comic == null) return;
-    
-    try {
-      if (_isFavorite) {
-        await NekoFavoritesManager().remove(_comic!.id);
-      } else {
-        await NekoFavoritesManager().add(_comic!);
-      }
-      setState(() {
-        _isFavorite = !_isFavorite;
-      });
-    } catch (e) {
-      // Handle error
     }
   }
 
@@ -96,9 +72,18 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
     }
 
     if (_error != null) {
-      return NekoErrorWidget(
-        message: _error!,
-        onRetry: _loadComic,
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_error!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadComic,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       );
     }
 
@@ -114,15 +99,27 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
         SliverToBoxAdapter(
           child: _buildHeader(),
         ),
+        if (_comic!.description != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(_comic!.description!),
+            ),
+          ),
         SliverToBoxAdapter(
-          child: _buildDescription(),
-        ),
-        SliverToBoxAdapter(
-          child: _buildChaptersHeader(),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Chapters (${_comic!.chapters.length})',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
         ),
         _buildChaptersList(),
         SliverPadding(
-          padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + 16),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.paddingOf(context).bottom + 80,
+          ),
         ),
       ],
     );
@@ -136,7 +133,6 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            // Background image
             if (_comic?.cover != null)
               Image.network(
                 _comic!.cover!,
@@ -145,7 +141,6 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
               ),
-            // Gradient overlay
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -153,9 +148,21 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Theme.of(context).colorScheme.surface,
+                    Colors.black.withAlpha(179),
                   ],
                 ),
+              ),
+            ),
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: Text(
+                _comic!.title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ),
           ],
@@ -164,15 +171,13 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
       actions: [
         IconButton(
           icon: Icon(
-            _isFavorite ? Icons.favorite : Icons.favorite_outline,
+            _isFavorite ? Icons.favorite : Icons.favorite_border,
             color: _isFavorite ? Colors.red : null,
           ),
-          onPressed: _toggleFavorite,
-        ),
-        IconButton(
-          icon: const Icon(Icons.share),
           onPressed: () {
-            // Share comic
+            setState(() {
+              _isFavorite = !_isFavorite;
+            });
           },
         ),
       ],
@@ -182,59 +187,56 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _comic!.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              _comic!.cover ?? '',
+              width: 120,
+              height: 180,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 120,
+                height: 180,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: const Icon(Icons.image),
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _InfoChip(icon: Icons.category, label: _comic!.type.name),
-              const SizedBox(width: 8),
-              _InfoChip(
-                icon: Icons.list,
-                label: '${_comic!.chapters.length} chapters',
-              ),
-            ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_comic!.author != null)
+                  Text(
+                    _comic!.author!,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                const SizedBox(height: 8),
+                if (_comic!.tags.isNotEmpty)
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: _comic!.tags.take(5).map((tag) {
+                      return Chip(
+                        label: Text(tag),
+                        visualDensity: VisualDensity.compact,
+                      );
+                    }).toList(),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDescription() {
-    if (_comic!.description == null || _comic!.description!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: NekoComicDescription(
-        description: _comic!.description!,
-        tags: _comic!.tags,
-      ),
-    );
-  }
-
-  Widget _buildChaptersHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        'Chapters',
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-    );
-  }
-
   Widget _buildChaptersList() {
-    final chapters = _comic!.chapters;
-    
-    if (chapters.isEmpty) {
+    if (_comic!.chapters.isEmpty) {
       return const SliverToBoxAdapter(
         child: Center(
           child: Padding(
@@ -245,71 +247,22 @@ class _ComicDetailsPageState extends State<ComicDetailsPage> {
       );
     }
 
-    // Show newest first
-    final sortedChapters = chapters.reversed.toList();
+    final chapters = _comic!.chapters.reversed.toList();
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
-          final chapter = sortedChapters[index];
+          final chapter = chapters[index];
           return ListTile(
-            leading: CircleAvatar(
-              child: Text('${index + 1}'),
-            ),
             title: Text(chapter.title),
-            subtitle: Text(chapter.time ?? ''),
-            onTap: () => _openReader(chapter),
+            subtitle: Text(chapter.subId ?? ''),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              // Navigate to reader
+            },
           );
         },
-        childCount: sortedChapters.length,
-      ),
-    );
-  }
-
-  Future<void> _openReader(NekoChapter chapter) async {
-    if (_comic == null) return;
-
-    try {
-      final images = await _comic!.source.getImages(chapter.id);
-      
-      if (!mounted) return;
-
-      context.push('/reader', extra: {
-        'comicId': _comic!.id,
-        'chapterId': chapter.id,
-        'images': images.map((e) => e.url).toList(),
-        'currentIndex': 0,
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load chapter: $e')),
-      );
-    }
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 4),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ],
+        childCount: chapters.length,
       ),
     );
   }

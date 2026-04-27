@@ -4,8 +4,8 @@ version: 1.0.0
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
-  flutter: '>=3.41.0'
+  sdk: ^3.5.0
+  flutter: ^3.24.0
 
 dependencies:
   flutter:
@@ -16,8 +16,8 @@ dependencies:
   scrollable_positioned_list: any
 
   # Utils
-  uuid: ^4.5.1
-  shimmer_animation: ^2.1.0
+  uuid: any
+  shimmer_animation: any
 
 dev_dependencies:
   flutter_test:

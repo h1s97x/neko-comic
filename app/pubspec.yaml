@@ -4,8 +4,8 @@ version: 1.0.0
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
-  flutter: '>=3.41.0'
+  sdk: ^3.5.0
+  flutter: ^3.24.0
 
 dependencies:
   flutter:
@@ -21,14 +21,14 @@ dependencies:
   neko_ui: { path: ../packages/neko_ui }
 
   # Platform
-  window_manager: ^0.5.1
-  app_links: ^7.0.0
-  url_launcher: ^6.3.2
+  window_manager: any
+  app_links: any
+  url_launcher: any
 
   # File
-  flutter_file_dialog: ^3.0.3
-  file_selector: ^1.1.0
-  share_plus: ^12.0.1
+  flutter_file_dialog: any
+  file_selector: any
+  share_plus: any
   zip_flutter: ^0.0.13
 
   # Utils
@@ -36,7 +36,7 @@ dependencies:
   intl: any
 
   # UI
-  flex_seed_scheme: ^4.0.1
+  flex_seed_scheme: ^3.0.0
   dynamic_color: ^1.8.1
 
   # Navigation
