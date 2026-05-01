@@ -547,3 +547,39 @@ class NekoArchiveInfo {
     );
   }
 }
+
+/// Favorite item with update info for follow updates
+class FavoriteItemWithUpdateInfo {
+  final String id;
+  final String sourceKey;
+  final String name;
+  final String? author;
+  final String coverPath;
+  final List<String> tags;
+  final DateTime time;
+  final String? updateTime;
+  final String? lastReadChapterId;
+  final String? lastReadChapterTitle;
+  final String? latestChapterId;
+  final String? latestChapterTitle;
+  final int? newChapterCount;
+
+  const FavoriteItemWithUpdateInfo({
+    required this.id,
+    required this.sourceKey,
+    required this.name,
+    this.author,
+    required this.coverPath,
+    required this.tags,
+    required this.time,
+    this.updateTime,
+    this.lastReadChapterId,
+    this.lastReadChapterTitle,
+    this.latestChapterId,
+    this.latestChapterTitle,
+    this.newChapterCount,
+  });
+
+  bool get hasUpdate =>
+      newChapterCount != null && newChapterCount! > 0;
+}

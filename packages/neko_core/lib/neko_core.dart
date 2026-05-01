@@ -23,5 +23,9 @@ export 'download/download_manager.dart';
 // Local comics
 export 'local/local_comics.dart';
 
+// Follow/Updates
+export 'follow/follow_manager.dart';
+
 // Utils
 export 'utils/utils.dart';
+export 'utils/tag_translation.dart';
