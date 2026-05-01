@@ -13,6 +13,8 @@ import '../pages/categories/categories_page.dart';
 import '../pages/history/history_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../pages/downloads/downloads_page.dart';
+import '../pages/image_favorites/image_favorites_page.dart';
+import '../pages/aggregate_search/aggregate_search_page.dart';
 import 'router/shell_scaffold.dart';
 
 /// Application router configuration
@@ -84,6 +86,20 @@ class NekoRouter {
         name: 'history',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const HistoryPage(),
+      ),
+      GoRoute(
+        path: '/image-favorites',
+        name: 'image-favorites',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ImageFavoritesPage(),
+      ),
+      GoRoute(
+        path: '/aggregate-search',
+        name: 'aggregate-search',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => AggregateSearchPage(
+          initialQuery: state.uri.queryParameters['q'],
+        ),
       ),
       GoRoute(
         path: '/settings',

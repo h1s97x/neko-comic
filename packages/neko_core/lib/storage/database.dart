@@ -115,6 +115,24 @@ class NekoDatabase {
         totalPages INTEGER
       );
     ''');
+
+    // Image favorites table
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS image_favorites (
+        id TEXT NOT NULL PRIMARY KEY,
+        comic_id TEXT NOT NULL,
+        comic_title TEXT NOT NULL,
+        sub_title TEXT,
+        source_key TEXT NOT NULL,
+        ep INTEGER NOT NULL,
+        ep_name TEXT NOT NULL,
+        page INTEGER NOT NULL,
+        image_key TEXT,
+        image_url TEXT,
+        time TEXT NOT NULL,
+        tags TEXT
+      );
+    ''');
   }
 
   /// Get database instance
