@@ -103,6 +103,18 @@ class NekoDatabase {
         time INTEGER NOT NULL
       );
     ''');
+
+    // Local comics table
+    _db.execute('''
+      CREATE TABLE IF NOT EXISTS local_comics (
+        path TEXT NOT NULL PRIMARY KEY,
+        title TEXT NOT NULL,
+        coverPath TEXT,
+        chapters TEXT NOT NULL,
+        addedAt TEXT NOT NULL,
+        totalPages INTEGER
+      );
+    ''');
   }
 
   /// Get database instance
@@ -125,6 +137,69 @@ class NekoDatabase {
   /// Select query
   ResultSet select(String sql, [List<Object?>? parameters]) {
     return _db.select(sql, parameters);
+  }
+
+  /// Query with convenience methods
+  Future<List<Map<String, Object?>>> query(
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+    String? orderBy,
+    int? limit,
+    int? offset,
+  }) async {
+    String sql = 'SELECT * FROM $table';
+    if (where != null) {
+      sql += ' WHERE $where';
+    }
+    if (orderBy != null) {
+      sql += ' ORDER BY $orderBy';
+    }
+    if (limit != null) {
+      sql += ' LIMIT $limit';
+    }
+    if (offset != null) {
+      sql += ' OFFSET $offset';
+    }
+    
+    final result = _db.select(sql, whereArgs);
+    return result.toListOfMaps();
+  }
+
+  /// Insert a row
+  Future<void> insert(String table, Map<String, Object?> values) async {
+    final columns = values.keys.join(', ');
+    final placeholders = List.filled(values.length, '?').join(', ');
+    final sql = 'INSERT INTO $table ($columns) VALUES ($placeholders)';
+    _db.execute(sql, values.values.toList());
+  }
+
+  /// Update rows
+  Future<void> update(
+    String table,
+    Map<String, Object?> values, {
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
+    final setClause = values.keys.map((k) => '$k = ?').join(', ');
+    String sql = 'UPDATE $table SET $setClause';
+    if (where != null) {
+      sql += ' WHERE $where';
+    }
+    _db.execute(sql, [...values.values, ...?whereArgs]);
+  }
+
+  /// Delete rows
+  Future<void> delete(
+    String table, {
+    String? where,
+    List<Object?>? whereArgs,
+  }) async {
+    String sql = 'DELETE FROM $table';
+    if (where != null) {
+      sql += ' WHERE $where';
+    }
+    _db.execute(sql, whereArgs);
   }
 }
 

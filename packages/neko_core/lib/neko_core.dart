@@ -17,5 +17,11 @@ export 'network/cookie_jar.dart';
 // Sync
 export 'sync/sync_manager.dart';
 
+// Download
+export 'download/download_manager.dart';
+
+// Local comics
+export 'local/local_comics.dart';
+
 // Utils
 export 'utils/utils.dart';

@@ -21,19 +21,19 @@ class ShellScaffold extends StatelessWidget {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Explore',
           ),
           NavigationDestination(
-            icon: Icon(Icons.favorite_outline),
-            selectedIcon: Icon(Icons.favorite),
-            label: 'Favorites',
+            icon: Icon(Icons.download_outlined),
+            selectedIcon: Icon(Icons.download),
+            label: 'Downloads',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
@@ -43,9 +43,9 @@ class ShellScaffold extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/home')) return 0;
-    if (location.startsWith('/search')) return 1;
-    if (location.startsWith('/favorites')) return 2;
-    if (location.startsWith('/settings')) return 3;
+    if (location.startsWith('/explore')) return 1;
+    if (location.startsWith('/downloads')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -55,13 +55,13 @@ class ShellScaffold extends StatelessWidget {
         context.go('/home');
         break;
       case 1:
-        context.go('/search');
+        context.go('/explore');
         break;
       case 2:
-        context.go('/favorites');
+        context.go('/downloads');
         break;
       case 3:
-        context.go('/settings');
+        context.go('/profile');
         break;
     }
   }

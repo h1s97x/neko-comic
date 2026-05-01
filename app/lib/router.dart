@@ -8,6 +8,11 @@ import '../pages/favorites/favorites_page.dart';
 import '../pages/settings/settings_page.dart';
 import '../pages/details/comic_details_page.dart';
 import '../pages/reader/reader_page.dart';
+import '../pages/explore/explore_page.dart';
+import '../pages/categories/categories_page.dart';
+import '../pages/history/history_page.dart';
+import '../pages/profile/profile_page.dart';
+import '../pages/downloads/downloads_page.dart';
 import 'router/shell_scaffold.dart';
 
 /// Application router configuration
@@ -33,30 +38,61 @@ class NekoRouter {
             ),
           ),
           GoRoute(
-            path: '/search',
-            name: 'search',
+            path: '/explore',
+            name: 'explore',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: SearchPage(),
+              child: ExplorePage(),
             ),
           ),
           GoRoute(
-            path: '/favorites',
-            name: 'favorites',
+            path: '/categories',
+            name: 'categories',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: FavoritesPage(),
+              child: CategoriesPage(),
             ),
           ),
           GoRoute(
-            path: '/settings',
-            name: 'settings',
+            path: '/profile',
+            name: 'profile',
             pageBuilder: (context, state) => const NoTransitionPage(
-              child: SettingsPage(),
+              child: ProfilePage(),
+            ),
+          ),
+          GoRoute(
+            path: '/downloads',
+            name: 'downloads',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DownloadsPage(),
             ),
           ),
         ],
       ),
       GoRoute(
-        path: '/comic/:id',
+        path: '/search',
+        name: 'search',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path: '/favorites',
+        name: 'favorites',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FavoritesPage(),
+      ),
+      GoRoute(
+        path: '/history',
+        name: 'history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HistoryPage(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: '/comic/:sourceKey/:id',
         name: 'comic-details',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
